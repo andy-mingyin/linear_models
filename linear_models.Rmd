@@ -12,7 +12,8 @@ library(p8105.datasets)
 set.seed(1)
 ```
 
-do some cleanining 
+do some cleanining
+
 ```{r}
 data("nyc_airbnb")
 
@@ -34,19 +35,16 @@ fit = lm(price ~ stars, data = nyc_airbnb)
 summary(fit)
 ```
 
-
 ```{r}
 summary(fit)
 summary(fit)$coef
 coef(fit)
 ```
 
-
 ```{r}
 fit |> 
   broom::glance()
 ```
-
 
 ```{r}
 nyc_airbnb = 
@@ -65,43 +63,87 @@ fit |>
   knitr::kable(digits = 3)
 ```
 
+## Diagnostics
+
+back track eda
+
+```{r}
+nyc_airbnb |>
+  ggplot(aes(x =stars, y= price)) +
+  geom_point() +
+  stat_smooth(method = "lm")
+```
+
+```{r}
+nyc_airbnb |> 
+  modelr::add_residuals(fit) |> 
+  ggplot(aes(x = borough, y = resid)) + geom_violin() +
+  ylim(-100, 100)
+```
+
+residuals against stars
+
+```{r}
+nyc_airbnb |> 
+  modelr::add_residuals(fit) |> 
+  modelr::add_predictions(fit) |> 
+  ggplot(aes(x= pred, y = resid)) + 
+  geom_point()
+```
+
+## Hyp testing
+
+```{r}
+
+fit_null = lm(price ~ stars + borough, data = nyc_airbnb)
+fit_alt = lm(price ~ stars + borough + room_type, data = nyc_airbnb)
+
+```
+
+```{r}
+fit_null |>
+  broom::tidy()
+fit_alt |>
+  broom::tidy()
+
+anova(fit_null, fit_alt)
+```
+
+## Do effects differ across boroughs
+
+first use a lot of interactions
+
+```{r}
+nyc_airbnb |> 
+  lm(price ~ stars * borough + room_type * borough, data = _) |> 
+  broom::tidy() |> 
+  knitr::kable(digits = 3)
+```
+
+```{r}
+  nyc_airbnb |> 
+  filter(borough == "Manhattan") |>
+  lm(price ~ stars + room_type, data = _) |>
+  broom::tidy()
+```
+get fancy and use list columns
+```{r}
+nyc_airbnb |> 
+  nest(data = -borough) |> 
+  mutate(
+    models = map(data, \(x) lm(price ~ stars + room_type, data = x)),
+    results = map(models, broom::tidy)) |>
+  select(borough, results) |>
+  unnest(results)|>
+  select(borough, term, estimate) |> 
+  mutate(term = fct_inorder(term)) |> 
+  pivot_wider(
+    names_from = term, values_from = estimate) 
+```
+
+```{r}
+
+```
 
 ```{r}
 ```
-
-
-```{r}
-```
-
-
-```{r}
-```
-
-
-```{r}
-```
-
-
-```{r}
-```
-
-
-```{r}
-```
-
-
-```{r}
-```
-
-
-```{r}
-```
-
-
-```{r}
-```
-
-
-```{r}
-```
-
