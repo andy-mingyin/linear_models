@@ -1,0 +1,92 @@
+
+```{r}
+library(tidyverse)
+library(modelr)
+library(mgcv)
+library(SemiPar)
+```
+
+
+```{r}
+set.seed(1)
+```
+
+load data lidar
+```{r}
+data(lidar)
+?lidar
+```
+
+
+```{r}
+lidar_df = 
+  lidar |> 
+  as_tibble() |>
+  mutate(id = row_number())
+```
+
+
+```{r}
+lidar_df |> 
+  ggplot(aes(x = range, y = logratio)) + 
+  geom_point()
+```
+
+## Trying to do CV 
+
+we will compare 3 models, one linear, one smooth, one wiggly
+
+Construct training and testing df
+
+```{r}
+train_df = sample_frac(lidar_df, size = .8)
+test_df = anti_join(lidar_df, train_df, by = "id")
+```
+
+look at these
+```{r}
+ggplot(train_df, aes(x = range, y = logratio)) + 
+  geom_point() + 
+  geom_point(data = test_df, color = "red")
+```
+fit 3 models
+
+```{r}
+linear_mod = lm(logratio ~ range, data = train_df)
+smooth_mod = mgcv::gam(logratio ~ s(range), data = train_df)
+wiggly_mod = mgcv::gam(logratio ~ s(range, k = 30), sp = 10e-6, data = train_df)
+```
+
+look at fits
+```{r}
+train_df |> 
+  add_predictions(smooth_mod) |> 
+  ggplot(aes(x = range, y = logratio)) + 
+  geom_point() + 
+  geom_line(aes(y = pred), color = "red")
+```
+compare these numerically using RMSE
+
+```{r}
+rmse(linear_mod, test_df)
+rmse(smooth_mod, test_df)
+rmse(wiggly_mod, test_df)
+
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
